@@ -25,6 +25,7 @@
 #include <linux/i2c-dev.h>
 #include "bsec_integration.h"
 #include <curl/curl.h>
+#include <memory.h>
 
 
 /* definitions */
@@ -32,6 +33,10 @@
 #define DESTZONE "TZ=Europe/Berlin"
 #define temp_offset (2.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
+#define measurement "meas1"
+#define influx_user "pi"
+#define influx_pwd "pwd"
+
 
 int g_i2cFid; // I2C Linux device handle
 int i2c_address = BME680_I2C_ADDR_PRIMARY;
@@ -214,6 +219,48 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   //printf(",%" PRId64, timestamp_ms);
   printf("\r\n");
   fflush(stdout);
+
+  char* influxhost = ",host=raspberrypi";
+  char* influxiaq = " IAQ=";
+  char* influxiaqacc = " IAQacc=";
+  char* influxT = " T=";
+  char* influxT = " H=";
+  char* influxT = " hPa=";
+  char* influxgas = " gas=";
+  char* influxstatus = " status=";
+  char* influxeco2 = " eCO2=";
+  char* influxbvoce = " bVOCe=";
+  char* empty = " ";
+  char* timestamp = (char*)time(NULL);
+
+
+  char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(iaq) + strlen(influxiaqacc) + strlen(iaq_accuracy) + strlen(influxT) + strlen(temperature) + strlen(influxH) + strlen(humidity) + strlen(influxhPa) + strlen(pressure) + strlen(influxgas) + strlen(gas) + strlen(influxstatus) + strlen(bsec_status) + strlen(influxeco2) + strlen(co2_equivalent) + strlen(influxbvoce) + strlen(breath_voc_equivalent) + 1 + strlen(timestamp) );
+  strcat(influxstring, measurement);
+  strcat(influxstring, influxhost);
+  strcat(influxstring, influxiaq);
+  strcat(influxstring, iaq);
+  strcat(influxstring, influxiaqacc);
+  strcat(influxstring, iaq_accuracy);
+  strcat(influxstring, influxT);
+  strcat(influxstring, temperature);
+  strcat(influxstring, influxH);
+  strcat(influxstring, humidity);
+  strcat(influxstring, influxhPa);
+  strcat(influxstring, pressure);
+  strcat(influxstring, influxgas);
+  strcat(influxstring, gas);
+  strcat(influxstring, influxstatus);
+  strcat(influxstring, bsec_status);
+  strcat(influxstring, influxeco2);
+  strcat(influxstring, co2_equivalent);
+  strcat(influxstring, influxbvoce);
+  strcat(influxstring, breath_voc_equivalent);
+  strcat(influxstring, empty);
+  strcat(influxstring, timestamp);
+
+  printf(influxstring)
+
+  influx_write(influxstring);
 }
 
 /*
@@ -322,10 +369,9 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
  *
  * return      result of the processing
  */
-int main()
+
+void influx_write(char *influxline)
 {
-  putenv(DESTZONE); // Switch to destination time zone
-  
   CURL *curl;
   CURLcode res;
 
@@ -338,9 +384,9 @@ int main()
     /* First set the URL that is about to receive our POST. This URL can
        just as well be a https:// URL if that is what should receive the
        data. */
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8086/api/v2/write?bucket=atmo&precision=ns&u=pi&p=***");
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8086/api/v2/write?bucket=atmo&precision=ns");
     /* Now specify the POST data */
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "cpu_load_short4,host=server01,region=us-west value=0.64 1434055562000000000");
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, influxline);
 
 
     /* Perform the request, res will get the return code */
@@ -354,6 +400,11 @@ int main()
     curl_easy_cleanup(curl);
   }
   curl_global_cleanup();
+}
+
+int main()
+{
+  putenv(DESTZONE); // Switch to destination time zone
 
   i2cOpen();
   i2cSetAddress(i2c_address);
