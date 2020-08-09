@@ -221,44 +221,46 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   fflush(stdout);
 
   char* influxhost = ",host=raspberrypi";
-  char* influxiaq = " IAQ=";
-  char* influxiaqacc = " IAQacc=";
-  char* influxT = " T=";
-  char* influxT = " H=";
-  char* influxT = " hPa=";
-  char* influxgas = " gas=";
-  char* influxstatus = " status=";
-  char* influxeco2 = " eCO2=";
-  char* influxbvoce = " bVOCe=";
+
+  char* influxiaq[80];
+  sprintf(influxiaq, " IAQ=%.2f", iaq);
+  char* influxiaqacc[80];
+  sprintf(influxiaqacc, " IAQacc=%d", iaq_accuracy);
+  char* influxT[80];
+  sprintf(influxT, " T=%.2f", temperature);
+  char* influxH[80];
+  sprintf(influxH, " H=%.2f", humidity);
+  char* influxhPa[80];
+  sprintf(influxhPa, " hPa=%.2f", pressure);
+  char* influxgas[80];
+  sprintf(influxgas, " gas=%.0f", gas);
+  char* influxstatus[80];
+  sprintf(influxstatus, " status=%d", bsec_status);
+  char* influxeco2[80];
+  sprintf(influxeco2, " eCO2=%.15f", co2_equivalent);
+  char* influxbvoce[80];
+  sprintf(influxbvoce, " bVOCe=%.25f", breath_voc_equivalent);
+
   char* empty = " ";
   char* timestamp = (char*)time(NULL);
 
 
-  char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(iaq) + strlen(influxiaqacc) + strlen(iaq_accuracy) + strlen(influxT) + strlen(temperature) + strlen(influxH) + strlen(humidity) + strlen(influxhPa) + strlen(pressure) + strlen(influxgas) + strlen(gas) + strlen(influxstatus) + strlen(bsec_status) + strlen(influxeco2) + strlen(co2_equivalent) + strlen(influxbvoce) + strlen(breath_voc_equivalent) + 1 + strlen(timestamp) );
+  char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(influxiaqacc) + strlen(influxT) + strlen(influxH) + strlen(influxhPa) + strlen(influxgas) + strlen(influxstatus) + strlen(influxeco2) + strlen(influxbvoce) + 1 + strlen(timestamp) );
   strcat(influxstring, measurement);
   strcat(influxstring, influxhost);
   strcat(influxstring, influxiaq);
-  strcat(influxstring, iaq);
   strcat(influxstring, influxiaqacc);
-  strcat(influxstring, iaq_accuracy);
   strcat(influxstring, influxT);
-  strcat(influxstring, temperature);
   strcat(influxstring, influxH);
-  strcat(influxstring, humidity);
   strcat(influxstring, influxhPa);
-  strcat(influxstring, pressure);
   strcat(influxstring, influxgas);
-  strcat(influxstring, gas);
   strcat(influxstring, influxstatus);
-  strcat(influxstring, bsec_status);
   strcat(influxstring, influxeco2);
-  strcat(influxstring, co2_equivalent);
   strcat(influxstring, influxbvoce);
-  strcat(influxstring, breath_voc_equivalent);
   strcat(influxstring, empty);
   strcat(influxstring, timestamp);
 
-  printf(influxstring)
+  printf(influxstring);
 
   influx_write(influxstring);
 }
