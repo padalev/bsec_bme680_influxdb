@@ -30,7 +30,7 @@ else
 fi
 
 echo 'Compiling...'
-cc -Wall -Wno-unused-but-set-variable -Wno-unused-variable -static \
+gcc -Wall -Wno-unused-but-set-variable -Wno-unused-variable \
   -std=c99 -pedantic \
   -iquote"${BSEC_DIR}"/API \
   -iquote"${BSEC_DIR}"/algo/${ARCH} \
@@ -39,7 +39,7 @@ cc -Wall -Wno-unused-but-set-variable -Wno-unused-variable -static \
   "${BSEC_DIR}"/examples/bsec_integration.c \
   ./bsec_bme680.c \
   -L"${BSEC_DIR}"/algo/"${ARCH}" -lalgobsec \
-  -lm -lrt \
+  -lm -lrt -lcurl \
   -o bsec_bme680
 echo 'Compiled.'
 
