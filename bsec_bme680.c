@@ -168,6 +168,51 @@ int64_t get_timestamp_us()
   return system_current_time_us;
 }
 
+int64_t get_timestamp_ns()
+{
+  struct timespec spec;
+  clock_gettime(CLOCK_REALTIME, &spec);
+  /* MONOTONIC in favor of REALTIME to avoid interference by time sync. */
+  //clock_gettime(CLOCK_MONOTONIC, &spec);
+
+  int64_t system_current_time_ns = ((int64_t)(spec.tv_sec) * (int64_t)1000000000
+                                   + (int64_t)(spec.tv_nsec))/(int64_t)1000;
+
+  return system_current_time_ns;
+}
+
+void influx_write(char *influxline)
+{
+  CURL *curl;
+  CURLcode res;
+
+  /* In windows, this will init the winsock stuff */
+  curl_global_init(CURL_GLOBAL_ALL);
+
+  /* get a curl handle */
+  curl = curl_easy_init();
+  if(curl) {
+    /* First set the URL that is about to receive our POST. This URL can
+       just as well be a https:// URL if that is what should receive the
+       data. */
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8086/api/v2/write?bucket=atmo&precision=ns");
+    /* Now specify the POST data */
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, influxline);
+
+
+    /* Perform the request, res will get the return code */
+    res = curl_easy_perform(curl);
+    /* Check for errors */
+    if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+    /* always cleanup */
+    curl_easy_cleanup(curl);
+  }
+  curl_global_cleanup();
+}
+
 /*
  * Handling of the ready outputs
  *
@@ -217,36 +262,36 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   printf(",[bVOCe ppm]: %.25f", breath_voc_equivalent);
   //printf(",%" PRId64, timestamp);
   //printf(",%" PRId64, timestamp_ms);
-  printf("\r\n");
+  printf("\r\n\n");
   fflush(stdout);
 
   char* influxhost = ",host=raspberrypi";
 
-  char* influxiaq[80];
-  sprintf(influxiaq, " IAQ=%.2f", iaq);
-  char* influxiaqacc[80];
-  sprintf(influxiaqacc, " IAQacc=%d", iaq_accuracy);
-  char* influxT[80];
-  sprintf(influxT, " T=%.2f", temperature);
-  char* influxH[80];
-  sprintf(influxH, " H=%.2f", humidity);
-  char* influxhPa[80];
-  sprintf(influxhPa, " hPa=%.2f", pressure);
-  char* influxgas[80];
-  sprintf(influxgas, " gas=%.0f", gas);
-  char* influxstatus[80];
-  sprintf(influxstatus, " status=%d", bsec_status);
-  char* influxeco2[80];
-  sprintf(influxeco2, " eCO2=%.15f", co2_equivalent);
-  char* influxbvoce[80];
-  sprintf(influxbvoce, " bVOCe=%.25f", breath_voc_equivalent);
+  char influxiaq[80];
+  sprintf(influxiaq, " IAQ=%.2f,", iaq);
+  char influxiaqacc[80];
+  sprintf(influxiaqacc, "IAQacc=%d,", iaq_accuracy);
+  char influxT[80];
+  sprintf(influxT, "T=%.2f,", temperature);
+  char influxH[80];
+  sprintf(influxH, "H=%.2f,", humidity);
+  char influxhPa[80];
+  sprintf(influxhPa, "hPa=%.2f,", pressure);
+  char influxgas[80];
+  sprintf(influxgas, "gas=%.0f,", gas);
+  char influxstatus[80];
+  sprintf(influxstatus, "status=%d,", bsec_status);
+  char influxeco2[80];
+  sprintf(influxeco2, "eCO2=%.15f,", co2_equivalent);
+  char influxbvoce[80];
+  sprintf(influxbvoce, "bVOCe=%.25f", breath_voc_equivalent);
+  char unixtimestamp[80];
+  sprintf(unixtimestamp, " %lli", get_timestamp_ns());
 
-  char* empty = " ";
-  char* timestamp = (char*)time(NULL);
+  /* char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(influxiaqacc) + strlen(influxT) + strlen(influxH) + strlen(influxhPa) + strlen(influxgas) + strlen(influxstatus) + strlen(influxeco2) + strlen(influxbvoce) + strlen(unixtimestamp) ); */
+  char* influxstring = (char*)malloc(5000);
 
-
-  char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(influxiaqacc) + strlen(influxT) + strlen(influxH) + strlen(influxhPa) + strlen(influxgas) + strlen(influxstatus) + strlen(influxeco2) + strlen(influxbvoce) + 1 + strlen(timestamp) );
-  strcat(influxstring, measurement);
+  strcpy(influxstring, measurement);
   strcat(influxstring, influxhost);
   strcat(influxstring, influxiaq);
   strcat(influxstring, influxiaqacc);
@@ -257,10 +302,11 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   strcat(influxstring, influxstatus);
   strcat(influxstring, influxeco2);
   strcat(influxstring, influxbvoce);
-  strcat(influxstring, empty);
-  strcat(influxstring, timestamp);
+  strcat(influxstring, unixtimestamp);
 
   printf(influxstring);
+  printf("\n\n\n");
+  fflush(stdout);
 
   influx_write(influxstring);
 }
@@ -371,38 +417,6 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
  *
  * return      result of the processing
  */
-
-void influx_write(char *influxline)
-{
-  CURL *curl;
-  CURLcode res;
-
-  /* In windows, this will init the winsock stuff */
-  curl_global_init(CURL_GLOBAL_ALL);
-
-  /* get a curl handle */
-  curl = curl_easy_init();
-  if(curl) {
-    /* First set the URL that is about to receive our POST. This URL can
-       just as well be a https:// URL if that is what should receive the
-       data. */
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8086/api/v2/write?bucket=atmo&precision=ns");
-    /* Now specify the POST data */
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, influxline);
-
-
-    /* Perform the request, res will get the return code */
-    res = curl_easy_perform(curl);
-    /* Check for errors */
-    if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
-
-    /* always cleanup */
-    curl_easy_cleanup(curl);
-  }
-  curl_global_cleanup();
-}
 
 int main()
 {
