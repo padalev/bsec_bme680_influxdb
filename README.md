@@ -1,6 +1,6 @@
 # bsec_bme680_influxdb
 
-This is a fork of the excellent [bsec_bme680_linux](https://github.com/alexh-name/bsec_bme680_linux implementation for bsec on linux but adds a simple http POST request to send the data to an influxdb database.
+This is a fork of the excellent [bsec_bme680_linux](https://github.com/alexh-name/bsec_bme680_linux) implementation for bsec on linux but adds a simple http POST request to send the data to an influxdb database.
 Works with the BME680 sensor on Linux (e.g. Raspberry Pi) with the BSEC library.
 
 ## Intro
