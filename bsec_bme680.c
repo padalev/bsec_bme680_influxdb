@@ -31,9 +31,9 @@
 /* definitions */
 
 #define DESTZONE "TZ=Europe/Berlin"
-#define temp_offset (5.0f)
+#define temp_offset (3.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
-#define database "db"
+#define database "atmo"
 #define measurement "meas1"
 
 
@@ -179,8 +179,8 @@ int64_t get_timestamp_ns()
   /* Better use REALTIME in this case so that the entries have the correct absolute timestamp. This can jump however when the system clock is changed. */
   //clock_gettime(CLOCK_MONOTONIC, &spec);
 
-  int64_t system_current_time_ns = ((int64_t)(spec.tv_sec) * (int64_t)1000000000
-                                   + (int64_t)(spec.tv_nsec))/(int64_t)1000;
+  int64_t system_current_time_ns = (int64_t)(spec.tv_sec) * (int64_t)1000000000
+                                   + (int64_t)(spec.tv_nsec);
 
   return system_current_time_ns;
 }
