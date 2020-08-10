@@ -31,10 +31,10 @@
 /* definitions */
 
 #define DESTZONE "TZ=Europe/Berlin"
-#define temp_offset (5.0f)
+double temp_offset = 5.0;
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
-#define database "mydb"
-#define measurement "meas1"
+char* database = "mydb";
+char* measurement = "meas1";
 
 
 int g_i2cFid; // I2C Linux device handle
@@ -433,22 +433,28 @@ int main(int argc, char *argv[])
 {
   putenv(DESTZONE); // Switch to destination time zone
 
-  int opt; 
-    
-  // put ':' in the starting of the 
-  // string so that program can  
-  //distinguish between '?' and ':'  
-  while((opt = getopt(argc, argv, “:if:lrx”)) != -1)  
-  {  
-    switch(opt)  
+  int opt;
+  char *ptr;
+  // put ':' in the starting of the
+  // string so that program can
+  //distinguish between '?' and ':'
+  while((opt = getopt(argc, argv,"d:m:t:")) != -1)
+  {
+    switch(opt)
     {
       case 'd':
-        printf(“database: %s\n”, optarg);
+        printf("database: %s\n", optarg);
+	database = optarg;
         break;
-      case 'm':  
-        printf(“measurement: %s\n”, optarg);  
+      case 'm':
+        printf("measurement: %s\n", optarg);
+        measurement = optarg;
         break;
-    }  
+      case 't':
+        printf("temperature offset: %s\n", optarg);
+        temp_offset = strtod(optarg, &ptr);
+        break;
+    }
   }
 
   i2cOpen();
