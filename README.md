@@ -24,9 +24,9 @@ and put it into `./src`, then unpack.
 - libcurl
 
 There are different libcurl dev versions which will work. For example you can do the following:
-´´´
+```
 $ sudo apt install libcurl4-openssl-dev
-´´´
+```
 - influxdb
 
 ## Configure and Compile
