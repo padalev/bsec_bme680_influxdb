@@ -429,9 +429,27 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
  * return      result of the processing
  */
 
-int main()
+int main(int argc, char *argv[])
 {
   putenv(DESTZONE); // Switch to destination time zone
+
+  int opt; 
+    
+  // put ':' in the starting of the 
+  // string so that program can  
+  //distinguish between '?' and ':'  
+  while((opt = getopt(argc, argv, “:if:lrx”)) != -1)  
+  {  
+    switch(opt)  
+    {
+      case 'd':
+        printf(“database: %s\n”, optarg);
+        break;
+      case 'm':  
+        printf(“measurement: %s\n”, optarg);  
+        break;
+    }  
+  }
 
   i2cOpen();
   i2cSetAddress(i2c_address);
