@@ -1,6 +1,7 @@
-# bsec_bme680_linux
+# bsec_bme680_influxdb
 
-Read the BME680 sensor with the BSEC library on Linux (e.g. Raspberry Pi)
+This is a fork of the excellent bsec_bme680_linux implementation for bsec on linux but adds a simple http POST request to send the data to an influxdb database.
+Works with the BME680 sensor on Linux (e.g. Raspberry Pi) with the BSEC library.
 
 ## Intro
 
@@ -14,12 +15,14 @@ Air Quality (IAQ) score.
 It makes use of
 [Bosch's provided driver](https://github.com/BoschSensortec/BME680_driver)
 and can be configured in terms of it.
-Readings will be directly output to stdout in a loop.
+Readings will be directly output to stdout in a loop and sent to a speciefied influxd database.
 
 ## Prerequisites
 
-[Download the BSEC software package from Bosch](https://www.bosch-sensortec.com/bst/products/all_products/bsec)
+- [Download the BSEC software package from Bosch](https://www.bosch-sensortec.com/bst/products/all_products/bsec)
 and put it into `./src`, then unpack.
+- libcurl
+- influxdb
 
 ## Configure and Compile
 
@@ -30,6 +33,12 @@ components giving off heat. Use an offset in °C in `bsec_bme680.c` to
 compensate. The default is 5 °C:
 ```
 #define temp_offset (5.0f)
+```
+
+Set the database you want to use and the name for your measurements:
+```
+#define database "db"
+#define measurement "meas1"
 ```
 
 To compile: `./make.sh`
@@ -55,10 +64,40 @@ increasing accuracy over time. Each 10.000 samples it will save the internal
 calibration state to `./bsec_iaq.state` (or wherever you specify the config
 directory to be) so it can pick up where it was after interruption.
 
+## Daemonize
+
+You can Deamonize the script to run in the background.
+Modify bsec_bme680.service to point to the correct location of the executable.
+```
+ExecStart=/home/pi/bsec_bme680_influxdb/bsec_bme680
+```
+
+Move the service file into the systemd directory:
+```
+$ sudo mv /home/pi/bsec_bme680_influxdb/bsec_bme680.service /etc/systemd/system/bsec_bme680.service
+```
+
+Reload systemctl:
+```
+$ sudo systemctl daemon-reload
+```
+
+Enable and start service:
+```
+$ sudo systemctl enable bsec_bme680.service
+$ sudo systemctl start bsec_bme680.service
+```
+
 ## Further
 
 You can find a growing list of tools to further use and visualize the data
 [here](https://github.com/alexh-name/bme680_outputs).
+
+## ToDo
+
+- integrate influx authentication
+- change influx domain and port
+- set constants over cli after compilation
 
 ## Troubleshooting
 

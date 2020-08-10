@@ -31,11 +31,10 @@
 /* definitions */
 
 #define DESTZONE "TZ=Europe/Berlin"
-#define temp_offset (2.0f)
+#define temp_offset (5.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
+#define database "db"
 #define measurement "meas1"
-#define influx_user "pi"
-#define influx_pwd "pwd"
 
 
 int g_i2cFid; // I2C Linux device handle
@@ -168,11 +167,16 @@ int64_t get_timestamp_us()
   return system_current_time_us;
 }
 
+/*
+ * Capture the system time in nanoseconds for influxdb entries.
+ *
+ * return          system_current_time    system timestamp in microseconds
+ */
 int64_t get_timestamp_ns()
 {
   struct timespec spec;
   clock_gettime(CLOCK_REALTIME, &spec);
-  /* MONOTONIC in favor of REALTIME to avoid interference by time sync. */
+  /* Better use REALTIME in this case so that the entries have the correct absolute timestamp. This can jump however when the system clock is changed. */
   //clock_gettime(CLOCK_MONOTONIC, &spec);
 
   int64_t system_current_time_ns = ((int64_t)(spec.tv_sec) * (int64_t)1000000000
@@ -181,6 +185,11 @@ int64_t get_timestamp_ns()
   return system_current_time_ns;
 }
 
+/*
+ * Da a curl POST request to the influxdb http socket, that contains the BSEC data.
+ *
+ * return          none
+ */
 void influx_write(char *influxline)
 {
   CURL *curl;
@@ -192,11 +201,19 @@ void influx_write(char *influxline)
   /* get a curl handle */
   curl = curl_easy_init();
   if(curl) {
-    /* First set the URL that is about to receive our POST. This URL can
-       just as well be a https:// URL if that is what should receive the
-       data. */
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8086/api/v2/write?bucket=atmo&precision=ns");
-    /* Now specify the POST data */
+    /* Build url for curl request */
+
+    char* curlfront = "http://localhost:8086/api/v2/write?bucket=";
+    char* curlback = "&precision=ns";
+
+    char* curlstring = (char*)malloc(1000);
+    strcpy(curlstring, curlfront);
+    strcat(curlstring, database);
+    strcat(curlstring, curlback);
+
+    /* Set url and content of curl POST to influxdb */
+
+    curl_easy_setopt(curl, CURLOPT_URL, curlstring);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, influxline);
 
 
@@ -239,10 +256,6 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float static_iaq, float co2_equivalent,
                   float breath_voc_equivalent)
 {
-  //int64_t timestamp_s = timestamp / 1000000000;
-  ////int64_t timestamp_ms = timestamp / 1000;
-
-  //time_t t = timestamp_s;
   /*
    * timestamp for localtime only makes sense if get_timestamp_us() uses
    * CLOCK_REALTIME
@@ -260,11 +273,12 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   //printf(",[static IAQ]: %.2f", static_iaq);
   printf(",[eCO2 ppm]: %.15f", co2_equivalent);
   printf(",[bVOCe ppm]: %.25f", breath_voc_equivalent);
-  //printf(",%" PRId64, timestamp);
-  //printf(",%" PRId64, timestamp_ms);
   printf("\r\n\n");
   fflush(stdout);
 
+  /*
+   * Build the string to send to influxdb according to influxdb line protocol.
+   */
   char* influxhost = ",host=raspberrypi";
 
   char influxiaq[80];
@@ -289,7 +303,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   sprintf(unixtimestamp, " %lli", get_timestamp_ns());
 
   /* char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(influxiaqacc) + strlen(influxT) + strlen(influxH) + strlen(influxhPa) + strlen(influxgas) + strlen(influxstatus) + strlen(influxeco2) + strlen(influxbvoce) + strlen(unixtimestamp) ); */
-  char* influxstring = (char*)malloc(5000);
+  char* influxstring = (char*)malloc(1000);
 
   strcpy(influxstring, measurement);
   strcat(influxstring, influxhost);
@@ -304,10 +318,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   strcat(influxstring, influxbvoce);
   strcat(influxstring, unixtimestamp);
 
-  printf(influxstring);
-  printf("\n\n\n");
-  fflush(stdout);
-
+  /* send the data over http */
   influx_write(influxstring);
 }
 

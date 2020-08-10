@@ -1,0 +1,10 @@
+[Unit]
+Description=BSEC influxdb
+[Service]
+Type=simple
+ExecStart=/home/pi/bsec_bme680_influxdb/bsec_bme680
+Restart=on-failure
+RestartSec=10
+KillMode=process
+[Install]
+WantedBy=multi-user.target
