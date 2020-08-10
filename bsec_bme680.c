@@ -31,9 +31,9 @@
 /* definitions */
 
 #define DESTZONE "TZ=Europe/Berlin"
-#define temp_offset (3.0f)
+#define temp_offset (5.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
-#define database "atmo"
+#define database "mydb"
 #define measurement "meas1"
 
 
