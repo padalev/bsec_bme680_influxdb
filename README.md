@@ -22,6 +22,10 @@ Readings will be directly output to stdout in a loop and sent to a speciefied in
 - [Download the BSEC software package from Bosch](https://www.bosch-sensortec.com/bst/products/all_products/bsec)
 and put it into `./src`, then unpack.
 - libcurl
+There are different libcurl dev versions which will work. For example you can do the following:
+´´´
+$ sudo apt install libcurl4-openssl-dev
+´´´
 - influxdb
 
 ## Configure and Compile
