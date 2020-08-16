@@ -36,6 +36,7 @@ double temp_offset = 5.0;
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
 char* database = "mydb";
 char* measurement = "meas1";
+float elevation = 50.0;
 
 
 int g_i2cFid; // I2C Linux device handle
@@ -257,7 +258,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float static_iaq, float co2_equivalent,
                   float breath_voc_equivalent)
 {
-  float P = pressure*expf(50.0/((273.15+temperature-0.1)*29.26));
+  float P = pressure*expf(elevation/((273.15+temperature-0.1)*29.26));
   /*
    * timestamp for localtime only makes sense if get_timestamp_us() uses
    * CLOCK_REALTIME
@@ -443,13 +444,13 @@ int main(int argc, char *argv[])
   // put ':' in the starting of the
   // string so that program can
   //distinguish between '?' and ':'
-  while((opt = getopt(argc, argv,"d:m:t:")) != -1)
+  while((opt = getopt(argc, argv,"d:m:t:e:")) != -1)
   {
     switch(opt)
     {
       case 'd':
         printf("database: %s\n", optarg);
-	database = optarg;
+        database = optarg;
         break;
       case 'm':
         printf("measurement: %s\n", optarg);
@@ -458,6 +459,10 @@ int main(int argc, char *argv[])
       case 't':
         printf("temperature offset: %s\n", optarg);
         temp_offset = strtod(optarg, &ptr);
+        break;
+      case 'e':
+        printf("elevation: %s\n", optarg);
+        elevation = strtof(optarg, &ptr);
         break;
     }
   }
