@@ -257,7 +257,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float static_iaq, float co2_equivalent,
                   float breath_voc_equivalent)
 {
-  float P = expf(50.0/((273.15+temperature-0.1)*29.26));
+  float P = pressure*expf(50.0/((273.15+temperature-0.1)*29.26));
   /*
    * timestamp for localtime only makes sense if get_timestamp_us() uses
    * CLOCK_REALTIME
@@ -268,8 +268,8 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   printf("%d-%02d-%02d %02d:%02d:%02d,", tm.tm_year + 1900,tm.tm_mon + 1,
          tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec); /* localtime */
   printf("[IAQ (%d)]: %.2f", iaq_accuracy, iaq);
-  printf(",[T degC]: %.2f,[H %%rH]: %.2f,[P hPa]: %.2f", temperature,
-         humidity,pressure / 100);
+  printf(",[T degC]: %.2f,[H %%rH]: %.2f,[P0 hPa]: %.2f,[P hPa]: %.2f", temperature,
+         humidity,pressure / 100,P / 100);
   printf(",[G Ohms]: %.0f", gas);
   printf(",[S]: %d", bsec_status);
   //printf(",[static IAQ]: %.2f", static_iaq);
@@ -291,8 +291,8 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   sprintf(influxT, "T=%.2f,", temperature);
   char influxH[80];
   sprintf(influxH, "H=%.2f,", humidity);
-  char influxhPa[80];
-  sprintf(influxhPa, "hPa=%.2f,", pressure);
+  char influxP0[80];
+  sprintf(influxP0, "P0=%.2f,", pressure);
   char influxP[80];
   sprintf(influxP, "P=%.2f,", P);
   char influxgas[80];
@@ -306,7 +306,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   char unixtimestamp[80];
   sprintf(unixtimestamp, " %lli", get_timestamp_ns());
 
-  /* char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(influxiaqacc) + strlen(influxT) + strlen(influxH) + strlen(influxhPa) + strlen(influxgas) + strlen(influxstatus) + strlen(influxeco2) + strlen(influxbvoce) + strlen(unixtimestamp) ); */
+  /* char* influxstring = (char *) malloc(strlen(measurement) + strlen(influxhost) + strlen(influxiaq) + strlen(influxiaqacc) + strlen(influxT) + strlen(influxH) + strlen(influxP0) + strlen(influxgas) + strlen(influxstatus) + strlen(influxeco2) + strlen(influxbvoce) + strlen(unixtimestamp) ); */
   char* influxstring = (char*)malloc(1000);
 
   strcpy(influxstring, measurement);
@@ -315,7 +315,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   strcat(influxstring, influxiaqacc);
   strcat(influxstring, influxT);
   strcat(influxstring, influxH);
-  strcat(influxstring, influxhPa);
+  strcat(influxstring, influxP0);
   strcat(influxstring, influxP);
   strcat(influxstring, influxgas);
   strcat(influxstring, influxstatus);
