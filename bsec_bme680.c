@@ -26,6 +26,7 @@
 #include "bsec_integration.h"
 #include <curl/curl.h>
 #include <memory.h>
+#include <math.h>
 
 
 /* definitions */
@@ -256,6 +257,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float static_iaq, float co2_equivalent,
                   float breath_voc_equivalent)
 {
+  float P = expf(50.0/((273.15+temperature-0.1)*29.26));
   /*
    * timestamp for localtime only makes sense if get_timestamp_us() uses
    * CLOCK_REALTIME
@@ -291,6 +293,8 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   sprintf(influxH, "H=%.2f,", humidity);
   char influxhPa[80];
   sprintf(influxhPa, "hPa=%.2f,", pressure);
+  char influxP[80];
+  sprintf(influxP, "P=%.2f,", P);
   char influxgas[80];
   sprintf(influxgas, "gas=%.0f,", gas);
   char influxstatus[80];
@@ -312,6 +316,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   strcat(influxstring, influxT);
   strcat(influxstring, influxH);
   strcat(influxstring, influxhPa);
+  strcat(influxstring, influxP);
   strcat(influxstring, influxgas);
   strcat(influxstring, influxstatus);
   strcat(influxstring, influxeco2);
