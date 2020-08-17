@@ -258,7 +258,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float static_iaq, float co2_equivalent,
                   float breath_voc_equivalent)
 {
-  float P = pressure*expf(elevation/((273.15+temperature-0.1)*29.26));
+  float P = pressure*expf(elevation/((273.15+temperature)*29.26));
   /*
    * timestamp for localtime only makes sense if get_timestamp_us() uses
    * CLOCK_REALTIME
